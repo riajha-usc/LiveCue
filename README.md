@@ -1,73 +1,64 @@
-# React + TypeScript + Vite
+# TwinMind - Live Suggestions
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An AI meeting copilot that listens to your microphone and shows you 3 useful suggestions in real time while a conversation is happening. Click any suggestion to get a detailed answer in the chat panel.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## What it does
 
-## React Compiler
+- **Listens** to your mic and converts speech to text every 30 seconds
+- **Suggests** 3 contextually relevant cards based on what's being said - could be a question to ask, a fact to check, a talking point, or an answer to something just raised
+- **Chats** - click any suggestion or type your own question to get a detailed AI answer
+- **Exports** the full session (transcript + suggestions + chat) as a JSON file
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## How to run it
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+You need a free Groq API key from [console.groq.com](https://console.groq.com).
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Open `http://localhost:5173`, click **Settings**, paste your Groq API key, and hit **Start**.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+---
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Tech stack
+
+- **React + TypeScript** - the UI framework. TypeScript adds type safety so bugs get caught early.
+- **Vite** - the build tool. Makes the dev server fast and deployment simple.
+- **Groq** - the AI provider. We use two of their models:
+  - **Whisper Large V3** for speech-to-text (turning your mic audio into readable transcript)
+  - **GPT-OSS 120B** for generating suggestions and chat answers
+- **react-markdown** - renders the AI's chat responses with proper formatting (bullets, bold, headers)
+- **lucide-react** - clean icons for buttons (mic, send, refresh, settings)
+
+All AI calls go directly from your browser to Groq using your own API key. Nothing is stored on any server.
+
+---
+
+## Prompt strategy
+
+The hardest part of this assignment isn't the code - it's making the suggestions actually useful.
+
+**For suggestions**, the app sends the last 400 words of transcript to the AI. Why 400? It's roughly 2-3 minutes of speech - enough to understand what's happening right now without getting distracted by what was said 20 minutes ago.
+
+The prompt forces 3 rules:
+1. Every suggestion must be a different type (question, answer, fact-check, talking point, or clarification)
+2. If someone just asked a question in the conversation, one suggestion must directly answer it
+3. The preview text on each card must be useful on its own - not just "click for more"
+
+**For chat**, the app sends up to 800 words of transcript as context. More context here makes sense because detailed answers need the full picture, not just the last few minutes.
+
+**Streaming** is used for chat responses so the first word appears almost instantly instead of waiting for the full answer.
+
+---
+
+## Tradeoffs
+
+- **No backend** - all API calls go directly from the browser. Simple and fast, and fine here because each user supplies their own API key.
+- **30 second chunks** - audio is collected in 30 second blobs before being sent to Whisper. There's a small chance a word gets cut at the boundary, but it's rare and keeps the architecture simple.
+- **400 words for suggestions, 800 for chat** - these are editable in Settings if you want to experiment.
