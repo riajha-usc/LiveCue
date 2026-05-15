@@ -1,4 +1,4 @@
-import type { TranscriptChunk, SuggestionBatch, ChatMessage } from '../types'
+import type { TranscriptChunk, SuggestionBatch, ChatMessage } from "../types";
 
 // ─── EXPORT SESSION ───────────────────────────────────────────────────────────
 // Downloads the full session as a JSON file.
@@ -6,7 +6,7 @@ import type { TranscriptChunk, SuggestionBatch, ChatMessage } from '../types'
 export function exportSession(
   transcriptChunks: TranscriptChunk[],
   suggestionBatches: SuggestionBatch[],
-  chatMessages: ChatMessage[]
+  chatMessages: ChatMessage[],
 ) {
   const session = {
     exported_at: new Date().toISOString(),
@@ -27,17 +27,17 @@ export function exportSession(
       role: m.role,
       content: m.content,
     })),
-  }
+  };
 
   const blob = new Blob([JSON.stringify(session, null, 2)], {
-    type: 'application/json',
-  })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `twinmind-session-${Date.now()}.json`
-  a.click()
-  URL.revokeObjectURL(url)
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `livecue-session-${Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ─── GET RECENT TRANSCRIPT ────────────────────────────────────────────────────
@@ -45,11 +45,11 @@ export function exportSession(
 // Used for suggestions — we only want recent context, not the whole meeting.
 export function getRecentTranscript(
   chunks: TranscriptChunk[],
-  wordLimit: number
+  wordLimit: number,
 ): string {
-  const full = chunks.map((c) => c.text).join(' ')
-  const words = full.trim().split(/\s+/)
-  return words.slice(-wordLimit).join(' ')
+  const full = chunks.map((c) => c.text).join(" ");
+  const words = full.trim().split(/\s+/);
+  return words.slice(-wordLimit).join(" ");
 }
 
 // ─── GET FULL TRANSCRIPT ──────────────────────────────────────────────────────
@@ -57,9 +57,9 @@ export function getRecentTranscript(
 // Used for chat — detailed answers need more context than suggestions.
 export function getFullTranscript(
   chunks: TranscriptChunk[],
-  wordLimit: number
+  wordLimit: number,
 ): string {
-  const full = chunks.map((c) => c.text).join('\n\n')
-  const words = full.trim().split(/\s+/)
-  return words.slice(-wordLimit).join(' ')
+  const full = chunks.map((c) => c.text).join("\n\n");
+  const words = full.trim().split(/\s+/);
+  return words.slice(-wordLimit).join(" ");
 }

@@ -1,188 +1,224 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
-import { Settings, Download, AlertCircle } from 'lucide-react'
+import { useState, useCallback, useRef, useEffect } from "react";
+import { Settings, Download, AlertCircle } from "lucide-react";
 
-import { TranscriptPanel } from './components/TranscriptPanel'
-import { SuggestionsPanel } from './components/SuggestionsPanel'
-import { ChatPanel } from './components/ChatPanel'
-import { SettingsModal } from './components/SettingsModal'
+import { TranscriptPanel } from "./components/TranscriptPanel";
+import { SuggestionsPanel } from "./components/SuggestionsPanel";
+import { ChatPanel } from "./components/ChatPanel";
+import { SettingsModal } from "./components/SettingsModal";
 
-import { useSettings } from './hooks/useSettings'
-import { useAudioRecorder } from './hooks/useAudioRecorder'
+import { useSettings } from "./hooks/useSettings";
+import { useAudioRecorder } from "./hooks/useAudioRecorder";
 
-import { transcribeAudio, fetchSuggestions, streamChatResponse } from './lib/groq'
-import { exportSession, getRecentTranscript, getFullTranscript } from './lib/export'
+import {
+  transcribeAudio,
+  fetchSuggestions,
+  streamChatResponse,
+} from "./lib/groq";
+import {
+  exportSession,
+  getRecentTranscript,
+  getFullTranscript,
+} from "./lib/export";
 
-import type { TranscriptChunk, SuggestionBatch, ChatMessage, Suggestion } from './types'
+import type {
+  TranscriptChunk,
+  SuggestionBatch,
+  ChatMessage,
+  Suggestion,
+} from "./types";
 
-const AUTO_REFRESH_MS = 30_000
+const AUTO_REFRESH_MS = 30_000;
 
 export default function App() {
-  const { settings, updateSettings, resetToDefaults } = useSettings()
+  const { settings, updateSettings, resetToDefaults } = useSettings();
 
   // ── All app state lives here ───────────────────────────────────────────────
-  const [transcriptChunks, setTranscriptChunks] = useState<TranscriptChunk[]>([])
-  const [suggestionBatches, setSuggestionBatches] = useState<SuggestionBatch[]>([])
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+  const [transcriptChunks, setTranscriptChunks] = useState<TranscriptChunk[]>(
+    [],
+  );
+  const [suggestionBatches, setSuggestionBatches] = useState<SuggestionBatch[]>(
+    [],
+  );
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
-  const [isTranscribing, setIsTranscribing] = useState(false)
-  const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false)
-  const [isStreaming, setIsStreaming] = useState(false)
-  const [streamingContent, setStreamingContent] = useState('')
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamingContent, setStreamingContent] = useState("");
 
-  const [showSettings, setShowSettings] = useState(!settings.groqApiKey)
-  const [globalError, setGlobalError] = useState<string | null>(null)
+  const [showSettings, setShowSettings] = useState(!settings.groqApiKey);
+  const [globalError, setGlobalError] = useState<string | null>(null);
 
   // Ref so async callbacks always see latest transcript without stale closure
-  const transcriptChunksRef = useRef<TranscriptChunk[]>([])
-  const autoRefreshRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const transcriptChunksRef = useRef<TranscriptChunk[]>([]);
+  const autoRefreshRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    transcriptChunksRef.current = transcriptChunks
-  }, [transcriptChunks])
+    transcriptChunksRef.current = transcriptChunks;
+  }, [transcriptChunks]);
 
   // ── Audio chunk → transcription ────────────────────────────────────────────
-  const handleAudioChunk = useCallback(async (blob: Blob) => {
-    if (!settings.groqApiKey) {
-      setGlobalError('No API key — open Settings and paste your Groq key.')
-      return
-    }
-    setIsTranscribing(true)
-    try {
-      const text = await transcribeAudio(blob, settings.groqApiKey)
-      if (!text.trim()) return
-      const chunk: TranscriptChunk = {
-        id: `chunk-${Date.now()}`,
-        timestamp: new Date().toISOString(),
-        text: text.trim(),
+  const handleAudioChunk = useCallback(
+    async (blob: Blob) => {
+      if (!settings.groqApiKey) {
+        setGlobalError("No API key — open Settings and paste your Groq key.");
+        return;
       }
-      setTranscriptChunks((prev) => [...prev, chunk])
-    } catch (err) {
-      setGlobalError(err instanceof Error ? err.message : 'Transcription error')
-    } finally {
-      setIsTranscribing(false)
-    }
-  }, [settings.groqApiKey])
+      setIsTranscribing(true);
+      try {
+        const text = await transcribeAudio(blob, settings.groqApiKey);
+        if (!text.trim()) return;
+        const chunk: TranscriptChunk = {
+          id: `chunk-${Date.now()}`,
+          timestamp: new Date().toISOString(),
+          text: text.trim(),
+        };
+        setTranscriptChunks((prev) => [...prev, chunk]);
+      } catch (err) {
+        setGlobalError(
+          err instanceof Error ? err.message : "Transcription error",
+        );
+      } finally {
+        setIsTranscribing(false);
+      }
+    },
+    [settings.groqApiKey],
+  );
 
-  const { isRecording, error: micError, startRecording, stopRecording, forceFlush } =
-    useAudioRecorder({ onChunk: handleAudioChunk })
+  const {
+    isRecording,
+    error: micError,
+    startRecording,
+    stopRecording,
+    forceFlush,
+  } = useAudioRecorder({ onChunk: handleAudioChunk });
 
   // ── Fetch suggestions ──────────────────────────────────────────────────────
   const refreshSuggestions = useCallback(async () => {
-    const chunks = transcriptChunksRef.current
-    if (chunks.length === 0 || !settings.groqApiKey) return
+    const chunks = transcriptChunksRef.current;
+    if (chunks.length === 0 || !settings.groqApiKey) return;
 
-    setIsFetchingSuggestions(true)
-    setGlobalError(null)
+    setIsFetchingSuggestions(true);
+    setGlobalError(null);
     try {
-      const recentText = getRecentTranscript(chunks, settings.suggestionContextWords)
+      const recentText = getRecentTranscript(
+        chunks,
+        settings.suggestionContextWords,
+      );
       const suggestions = await fetchSuggestions(
         recentText,
         settings.suggestionPrompt,
-        settings.groqApiKey
-      )
+        settings.groqApiKey,
+      );
       const batch: SuggestionBatch = {
         id: `batch-${Date.now()}`,
         timestamp: new Date().toISOString(),
         suggestions,
-      }
-      setSuggestionBatches((prev) => [batch, ...prev])
+      };
+      setSuggestionBatches((prev) => [batch, ...prev]);
     } catch (err) {
-      setGlobalError(err instanceof Error ? err.message : 'Suggestions error')
+      setGlobalError(err instanceof Error ? err.message : "Suggestions error");
     } finally {
-      setIsFetchingSuggestions(false)
+      setIsFetchingSuggestions(false);
     }
-  }, [settings])
+  }, [settings]);
 
   // Manual refresh: flush audio first, then suggestions after short delay
   const handleManualRefresh = useCallback(() => {
-    forceFlush()
-    setTimeout(refreshSuggestions, 2000)
-  }, [forceFlush, refreshSuggestions])
+    forceFlush();
+    setTimeout(refreshSuggestions, 2000);
+  }, [forceFlush, refreshSuggestions]);
 
   // Auto-refresh suggestions every 30s while recording
   useEffect(() => {
     if (isRecording) {
-      autoRefreshRef.current = setInterval(refreshSuggestions, AUTO_REFRESH_MS)
+      autoRefreshRef.current = setInterval(refreshSuggestions, AUTO_REFRESH_MS);
     } else {
       if (autoRefreshRef.current) {
-        clearInterval(autoRefreshRef.current)
-        autoRefreshRef.current = null
+        clearInterval(autoRefreshRef.current);
+        autoRefreshRef.current = null;
       }
     }
     return () => {
-      if (autoRefreshRef.current) clearInterval(autoRefreshRef.current)
-    }
-  }, [isRecording, refreshSuggestions])
+      if (autoRefreshRef.current) clearInterval(autoRefreshRef.current);
+    };
+  }, [isRecording, refreshSuggestions]);
 
   // ── Chat ───────────────────────────────────────────────────────────────────
-  const sendChatMessage = useCallback(async (userText: string) => {
-    if (!settings.groqApiKey) {
-      setGlobalError('No API key — open Settings.')
-      return
-    }
-
-    const userMsg: ChatMessage = {
-      id: `msg-${Date.now()}`,
-      timestamp: new Date().toISOString(),
-      role: 'user',
-      content: userText,
-    }
-    const updatedMessages = [...chatMessages, userMsg]
-    setChatMessages(updatedMessages)
-    setIsStreaming(true)
-    setStreamingContent('')
-
-    const fullTranscript = getFullTranscript(
-      transcriptChunksRef.current,
-      settings.chatContextWords
-    )
-    const systemPrompt = settings.chatSystemPrompt.replace(
-      '{transcript}',
-      fullTranscript || '(No transcript yet)'
-    )
-
-    let fullResponse = ''
-    try {
-      for await (const token of streamChatResponse(
-        updatedMessages,
-        systemPrompt,
-        settings.groqApiKey
-      )) {
-        fullResponse += token
-        setStreamingContent(fullResponse)
+  const sendChatMessage = useCallback(
+    async (userText: string) => {
+      if (!settings.groqApiKey) {
+        setGlobalError("No API key — open Settings.");
+        return;
       }
-      const assistantMsg: ChatMessage = {
-        id: `msg-${Date.now()}-a`,
+
+      const userMsg: ChatMessage = {
+        id: `msg-${Date.now()}`,
         timestamp: new Date().toISOString(),
-        role: 'assistant',
-        content: fullResponse,
+        role: "user",
+        content: userText,
+      };
+      const updatedMessages = [...chatMessages, userMsg];
+      setChatMessages(updatedMessages);
+      setIsStreaming(true);
+      setStreamingContent("");
+
+      const fullTranscript = getFullTranscript(
+        transcriptChunksRef.current,
+        settings.chatContextWords,
+      );
+      const systemPrompt = settings.chatSystemPrompt.replace(
+        "{transcript}",
+        fullTranscript || "(No transcript yet)",
+      );
+
+      let fullResponse = "";
+      try {
+        for await (const token of streamChatResponse(
+          updatedMessages,
+          systemPrompt,
+          settings.groqApiKey,
+        )) {
+          fullResponse += token;
+          setStreamingContent(fullResponse);
+        }
+        const assistantMsg: ChatMessage = {
+          id: `msg-${Date.now()}-a`,
+          timestamp: new Date().toISOString(),
+          role: "assistant",
+          content: fullResponse,
+        };
+        setChatMessages((prev) => [...prev, assistantMsg]);
+      } catch (err) {
+        setGlobalError(err instanceof Error ? err.message : "Chat error");
+      } finally {
+        setIsStreaming(false);
+        setStreamingContent("");
       }
-      setChatMessages((prev) => [...prev, assistantMsg])
-    } catch (err) {
-      setGlobalError(err instanceof Error ? err.message : 'Chat error')
-    } finally {
-      setIsStreaming(false)
-      setStreamingContent('')
-    }
-  }, [chatMessages, settings])
+    },
+    [chatMessages, settings],
+  );
 
   // When a suggestion card is clicked
-  const handleSuggestionClick = useCallback((suggestion: Suggestion) => {
-    const fullTranscript = getFullTranscript(
-      transcriptChunksRef.current,
-      settings.chatContextWords
-    )
-    const expandedPrompt = settings.expandedAnswerPrompt
-      .replace('{expand_prompt}', suggestion.expandPrompt)
-      .replace('{transcript}', fullTranscript || '(No transcript yet)')
+  const handleSuggestionClick = useCallback(
+    (suggestion: Suggestion) => {
+      const fullTranscript = getFullTranscript(
+        transcriptChunksRef.current,
+        settings.chatContextWords,
+      );
+      const expandedPrompt = settings.expandedAnswerPrompt
+        .replace("{expand_prompt}", suggestion.expandPrompt)
+        .replace("{transcript}", fullTranscript || "(No transcript yet)");
 
-    sendChatMessage(expandedPrompt)
-  }, [sendChatMessage, settings])
+      sendChatMessage(expandedPrompt);
+    },
+    [sendChatMessage, settings],
+  );
 
   // ── Export ─────────────────────────────────────────────────────────────────
   const handleExport = () => {
-    exportSession(transcriptChunks, suggestionBatches, chatMessages)
-  }
+    exportSession(transcriptChunks, suggestionBatches, chatMessages);
+  };
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -190,7 +226,7 @@ export default function App() {
       <header className="app-header">
         <div className="app-logo">
           <span className="logo-dot" />
-          TwinMind
+          LiveCue
         </div>
         <div className="header-actions">
           {globalError && (
@@ -242,5 +278,5 @@ export default function App() {
         />
       )}
     </div>
-  )
+  );
 }

@@ -1,4 +1,4 @@
-import type { AppSettings } from '../types'
+import type { AppSettings } from "../types";
 
 export const DEFAULT_SUGGESTION_PROMPT = `You are a real-time meeting assistant. Analyze the conversation transcript below and generate exactly 3 suggestions to help the listener RIGHT NOW.
 
@@ -28,7 +28,7 @@ Respond with this exact JSON structure:
     "preview": "Short, immediately useful text (1-2 sentences)",
     "expand_prompt": "Full question for detailed answer"
   }
-]`
+]`;
 
 export const DEFAULT_CHAT_SYSTEM_PROMPT = `You are an intelligent meeting assistant with full context of the ongoing conversation.
 
@@ -41,7 +41,7 @@ Your role:
 Full meeting transcript so far:
 {transcript}
 
-Answer the user's question with precision and depth.`
+Answer the user's question with precision and depth.`;
 
 export const DEFAULT_EXPANDED_ANSWER_PROMPT = `Based on the meeting transcript provided, give a thorough and actionable answer to the following:
 
@@ -52,15 +52,15 @@ Structure your response with:
 - Supporting context or evidence from the conversation
 - Concrete next steps or follow-up points if applicable
 
-Be specific to what was actually discussed, not generic advice.`
+Be specific to what was actually discussed, not generic advice.`;
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  groqApiKey: '',
+  groqApiKey: "",
   suggestionPrompt: DEFAULT_SUGGESTION_PROMPT,
   chatSystemPrompt: DEFAULT_CHAT_SYSTEM_PROMPT,
   expandedAnswerPrompt: DEFAULT_EXPANDED_ANSWER_PROMPT,
   suggestionContextWords: 400,
   chatContextWords: 800,
-}
+};
 
-export const SETTINGS_STORAGE_KEY = 'twinmind_settings'
+export const SETTINGS_STORAGE_KEY = "livecue_settings";
