@@ -27,9 +27,9 @@ All AI calls go directly from browser to Groq using the API key. Nothing is stor
 
 ## Prompt strategy
 
-The hardest part of this assignment isn't the code - it's making the suggestions actually useful.
+The hardest part of this project isn't the code, it's making the suggestions actually useful.
 
-**For suggestions**, the app sends the last 400 words of transcript to the AI. Why 400? It's roughly 2-3 minutes of speech - enough to understand what's happening right now without getting distracted by what was said 20 minutes ago.
+**For suggestions**, the app sends the last 400 words of transcript to the AI. Why 400? It's roughly 2-3 minutes of speech, enough to understand what's happening right now without getting distracted by what was said 20 minutes ago.
 
 The prompt forces 3 rules:
 1. Every suggestion must be a different type (question, answer, fact-check, talking point, or clarification)
