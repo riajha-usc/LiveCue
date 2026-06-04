@@ -21,7 +21,7 @@ An AI meeting copilot that listens to your microphone and shows you 3 useful sug
   - **Whisper Large V3** for speech-to-text (turning your mic audio into readable transcript)
   - **GPT-OSS 120B** for generating suggestions and chat answers
 
-All AI calls go directly from your browser to Groq using the API key. Nothing is stored on any server.
+All AI calls go directly from browser to Groq using the API key. Nothing is stored on any server.
 
 ---
 
