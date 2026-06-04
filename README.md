@@ -13,30 +13,15 @@ An AI meeting copilot that listens to your microphone and shows you 3 useful sug
 
 ---
 
-## How to run it
-
-You need a free Groq API key from [console.groq.com](https://console.groq.com).
-
-```bash
-npm install
-npm run dev
-```
-
-Open `http://localhost:5173`, click **Settings**, paste your Groq API key, and hit **Start**.
-
----
-
 ## Tech stack
 
-- **React + TypeScript** - the UI framework. TypeScript adds type safety so bugs get caught early.
-- **Vite** - the build tool. Makes the dev server fast and deployment simple.
+- **React + TypeScript** - the UI framework.
+- **Vite** - the build tool.
 - **Groq** - the AI provider. We use two of their models:
   - **Whisper Large V3** for speech-to-text (turning your mic audio into readable transcript)
   - **GPT-OSS 120B** for generating suggestions and chat answers
-- **react-markdown** - renders the AI's chat responses with proper formatting (bullets, bold, headers)
-- **lucide-react** - clean icons for buttons (mic, send, refresh, settings)
 
-All AI calls go directly from your browser to Groq using your own API key. Nothing is stored on any server.
+All AI calls go directly from your browser to Groq using the API key. Nothing is stored on any server.
 
 ---
 
