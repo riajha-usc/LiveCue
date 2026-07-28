@@ -2,7 +2,6 @@ import type { TranscriptChunk, SuggestionBatch, ChatMessage } from "../types";
 
 // ─── EXPORT SESSION ───────────────────────────────────────────────────────────
 // Downloads the full session as a JSON file.
-// The interviewers use this to evaluate your submission — don't skip it.
 export function exportSession(
   transcriptChunks: TranscriptChunk[],
   suggestionBatches: SuggestionBatch[],
@@ -54,7 +53,7 @@ export function getRecentTranscript(
 
 // ─── GET FULL TRANSCRIPT ──────────────────────────────────────────────────────
 // Returns up to N words from the full transcript.
-// Used for chat — detailed answers need more context than suggestions.
+// Used for chat - detailed answers need more context than suggestions.
 export function getFullTranscript(
   chunks: TranscriptChunk[],
   wordLimit: number,
