@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, RotateCcw, Eye, EyeOff } from 'lucide-react'
+import { X, RotateCcw, Eye, EyeOff, ExternalLink } from 'lucide-react'
 import type { AppSettings } from '../types'
 
 interface SettingsModalProps {
@@ -17,6 +17,10 @@ export function SettingsModal({
 }: SettingsModalProps) {
   const [showKey, setShowKey] = useState(false)
 
+  // First run = no key stored yet. Lead with an explanation instead of
+  // dropping a new visitor straight into the prompt-tuning controls.
+  const isFirstRun = !settings.groqApiKey
+
   return (
     <div
       className="modal-overlay"
@@ -24,7 +28,9 @@ export function SettingsModal({
     >
       <div className="modal">
         <div className="modal-header">
-          <h2 className="modal-title">Settings</h2>
+          <h2 className="modal-title">
+            {isFirstRun ? 'Welcome to LiveCue' : 'Settings'}
+          </h2>
           <div className="modal-header-actions">
             <button className="icon-btn" onClick={onReset} title="Reset to defaults">
               <RotateCcw size={16} />
@@ -36,6 +42,29 @@ export function SettingsModal({
         </div>
 
         <div className="modal-body">
+
+          {isFirstRun && (
+            <section className="settings-intro">
+              <p>
+                LiveCue listens to your meeting, transcribes it live, and
+                suggests questions and talking points as the conversation
+                happens.
+              </p>
+              <p>
+                It runs entirely in your browser — there is no backend, so
+                you'll need your own Groq API key to start. Groq's free tier
+                is enough to try it.
+              </p>
+              <a
+                className="settings-link"
+                href="https://console.groq.com/keys"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Get a free Groq API key <ExternalLink size={12} />
+              </a>
+            </section>
+          )}
 
           {/* API Key */}
           <section className="settings-section">
@@ -56,9 +85,16 @@ export function SettingsModal({
               </button>
             </div>
             <p className="settings-hint">
-              Stored locally in your browser. Never sent anywhere except Groq.
+              Kept in this browser's local storage and sent directly to Groq.
+              LiveCue has no backend, so your key never reaches a server of
+              ours.
             </p>
           </section>
+
+          <details className="settings-advanced" open={!isFirstRun}>
+            <summary className="settings-advanced-summary">
+              Advanced — context windows &amp; prompts
+            </summary>
 
           {/* Context Windows */}
           <section className="settings-section">
@@ -123,6 +159,7 @@ export function SettingsModal({
               rows={8}
             />
           </section>
+          </details>
 
         </div>
       </div>
