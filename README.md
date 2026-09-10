@@ -1,5 +1,7 @@
 # LiveCue - Live Suggestions
 
+Live Url: https://livecue-fawn.vercel.app/
+
 An AI meeting copilot that listens to your microphone and shows you 3 useful suggestions in real time while a conversation is happening. Click any suggestion to get a detailed answer in the chat panel.
 
 ---
